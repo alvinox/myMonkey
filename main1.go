@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-    line    := "if (c > a) { 99 } else { 100 };"
+    line    := `"Hello" + " " + "World!"`
     l       := lexer.New(line)
     p       := parser.New(l)
     program := p.ParseProgram()

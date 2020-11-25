@@ -9,6 +9,7 @@ const (
     // identifiers + literals
     IDENT       = "IDENT"
     INT         = "INT"
+    STRING      = "STRING"
 
     // operators
     ASSIGN      = "ASSIGN"
@@ -27,9 +28,12 @@ const (
     // delimiters
     COMMA       = ","
     SEMICOLON   = ";"
+    COLON       = ":"
 
     LPAREN      = "("
     RPAREN      = ")"
+    LBRACKET    = "["
+    RBRACKET    = "]"
     LBRACE      = "{"
     RBRACE      = "}"
 

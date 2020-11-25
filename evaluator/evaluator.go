@@ -43,8 +43,21 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
     case *ast.IntegerLiteral:
         return &object.Integer{Value: node.Value}
 
+    case *ast.StringLiteral:
+        return &object.String{Value: node.Value}
+
     case *ast.Boolean:
         return nativeBoolToBooleanObject(node.Value)
+
+    case *ast.ArrayLiteral:
+        elements := evalExpressions(node.Elements, env)
+        if len(elements) == 1 && isError(elements[0]) {
+            return elements[0]
+        }
+        return &object.Array{Elements: elements}
+
+    case *ast.HashLiteral:
+        return evalHashLiteral(node, env)
 
     case *ast.PrefixOpExpression:
         right := Eval(node.Right, env)
@@ -64,6 +77,19 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
             return right
         }
         return evalInfixExpression(node.Operator, left, right)
+
+    case *ast.IndexExpression:
+        left  := Eval(node.Left, env)
+        if isError(left) {
+            return left
+        }
+
+        index := Eval(node.Index, env)
+        if isError(index) {
+            return index
+        }
+
+        return evalIndexExpression(left, index)
 
     case *ast.IfExpression:
         return evalIfExpression(node, env)
@@ -129,12 +155,41 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-    val, ok := env.Get(node.Value)
-    if !ok {
-        return newError("identifier not found: " + node.Value)
+    if val, ok := env.Get(node.Value); ok {
+        return val
     }
 
-    return val
+    if builtin, ok := Builtins[node.Value]; ok {
+        return builtin
+    }
+
+    return newError("identifier not found: " + node.Value)
+}
+
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+    pairs := make(map[object.HashKey]object.HashPair)
+
+    for keyNode, valueNode := range node.Pairs {
+        key := Eval(keyNode, env)
+        if isError(key) {
+            return key
+        }
+
+        hashKey, ok := key.(object.Hashable)
+        if !ok {
+            newError("unusable as hash key: %s", key.Type())
+        }
+
+        value := Eval(valueNode, env)
+        if isError(value) {
+            return value
+        }
+
+        hashed := hashKey.HashKey()
+        pairs[hashed] = object.HashPair{Key: key, Value: value}
+    }
+
+    return &object.Hash{Pairs: pairs}
 }
 
 func evalPrefixOpExpression(operator string, right object.Object) object.Object {
@@ -157,6 +212,8 @@ func evalInfixExpression(operator string,
     switch {
     case lType == object.INTEGER_OBJ && rType == object.INTEGER_OBJ:
         return evalIntegerInfixExpression(operator, left, right)
+    case lType == object.STRING_OBJ && rType == object.STRING_OBJ:
+        return evalStringInfixExpression(operator, left, right)
     case lType == object.BOOLEAN_OBJ && rType == object.BOOLEAN_OBJ:
         return evalBooleanInfixExpression(operator, left, right)
     case lType != rType:
@@ -166,6 +223,48 @@ func evalInfixExpression(operator string,
         return newError("unknown operator: %s %s %s",
             lType, operator, rType)
     }
+}
+
+func evalIndexExpression(left, index object.Object) object.Object {
+    lType := left.Type()
+    iType := index.Type()
+
+    switch {
+    case lType == object.ARRAY_OBJ && iType == object.INTEGER_OBJ:
+        return evalArrayIndexExpression(left, index)
+    case lType == object.HASH_OBJ:
+        return evalHashIndexExpression(left, index)
+    default:
+        return newError("index operator not supported: %s", left.Type())
+    }
+}
+
+func evalArrayIndexExpression(left, index object.Object) object.Object {
+    array := left.(*object.Array)
+    idx   := index.(*object.Integer).Value
+    max   := int64(len(array.Elements) - 1)
+
+    if idx < 0 || idx > max {
+        return NULL
+    }
+
+    return array.Elements[idx]
+}
+
+func evalHashIndexExpression(left, index object.Object) object.Object {
+    hashObject := left.(*object.Hash)
+
+    key, ok := index.(object.Hashable)
+    if !ok {
+        return newError("unusable as hash key: %s", index.Type())
+    }
+
+    pair, ok := hashObject.Pairs[key.HashKey()]
+    if !ok {
+        return NULL
+    }
+
+    return pair.Value
 }
 
 func evalBangOperatorExpression(right object.Object) object.Object {
@@ -218,6 +317,21 @@ func evalIntegerInfixExpression(operator string,
     }
 }
 
+func evalStringInfixExpression(operator string,
+    left, right object.Object) object.Object {
+    
+    leftVal  := left.(*object.String).Value
+    rightVal := right.(*object.String).Value
+
+    switch operator {
+    case "+":
+        return &object.String{Value: leftVal + rightVal}
+    default:
+        return newError("unknown operator: %s %s %s",
+            left.Type(), operator, right.Type())
+    }
+}
+
 func evalBooleanInfixExpression(operator string,
     left, right object.Object) object.Object {
 
@@ -264,14 +378,16 @@ func evalExpressions(exps []ast.Expression,
 }
 
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-    function, ok := fn.(*object.Function)
-    if !ok {
+    switch fn := fn.(type) {
+    case *object.Function:
+        extendedEnv := extendFunctionEnv(fn, args)
+        evaluated   := Eval(fn.Body, extendedEnv)
+        return unwrapReturnValue(evaluated)
+    case *object.Builtin:
+        return fn.Fn(args...)
+    default:
         return newError("not a function: %s", fn.Type())
     }
-
-    extendedEnv := extendFunctionEnv(function, args)
-    evaluated   := Eval(function.Body, extendedEnv)
-    return unwrapReturnValue(evaluated)
 }
 
 func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {

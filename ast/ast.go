@@ -171,6 +171,21 @@ func (i *IntegerLiteral) String() string {
 
 func (i *IntegerLiteral) ExpressionNode() {}
 
+type StringLiteral struct {
+    Token token.Token
+    Value string
+}
+
+func (s *StringLiteral) TokenLiteral() string {
+    return s.Token.Literal
+}
+
+func (s *StringLiteral) String() string {
+    return s.Value
+}
+
+func (s *StringLiteral) ExpressionNode() {}
+
 type Boolean struct {
     Token    token.Token // the token.INT token
     Value    bool
@@ -192,6 +207,58 @@ type IfExpression struct {
     Consequence   *BlockStatement
     Alternative   *BlockStatement
 }
+
+type ArrayLiteral struct {
+    Token         token.Token // the '[' token
+    Elements      []Expression
+}
+
+func (al *ArrayLiteral) TokenLiteral() string {
+    return al.Token.Literal
+}
+
+func (al *ArrayLiteral) String() string {
+    var out bytes.Buffer
+
+    elements := []string{}
+    for _, e := range al.Elements {
+        elements = append(elements, e.String())
+    }
+
+    out.WriteString("[")
+    out.WriteString(strings.Join(elements, ", "))
+    out.WriteString("]")
+
+    return out.String()
+}
+
+func (al *ArrayLiteral) ExpressionNode() {}
+
+type HashLiteral struct {
+    Token     token.Token // the '{' token
+    Pairs     map[Expression]Expression
+}
+
+func (hl *HashLiteral) TokenLiteral() string {
+    return hl.Token.Literal
+}
+
+func (hl *HashLiteral) String() string {
+    var out bytes.Buffer
+
+    pairs := []string{}
+    for key, value := range hl.Pairs {
+        pairs = append(pairs, key.String() + ":" + value.String())
+    }
+
+    out.WriteString("{")
+    out.WriteString(strings.Join(pairs, ", "))
+    out.WriteString("}")
+
+    return out.String()
+}
+
+func (hl *HashLiteral) ExpressionNode() {}
 
 func (ie *IfExpression) TokenLiteral() string {
     return ie.Token.Literal
@@ -318,3 +385,28 @@ func (ie *InfixExpression) String() string {
 }
 
 func (ie *InfixExpression) ExpressionNode() {}
+
+type IndexExpression struct {
+    Token    token.Token // the '[' token
+    Left     Expression
+    Index    Expression
+}
+
+func (ie *IndexExpression) TokenLiteral() string {
+    return ie.Token.Literal
+}
+
+func (ie *IndexExpression) String() string {
+    var out bytes.Buffer
+
+    out.WriteString("(")
+    out.WriteString(ie.Left.String())
+    out.WriteString("[")
+    out.WriteString(ie.Index.String())
+    out.WriteString("]")
+    out.WriteString(")")
+
+    return out.String()
+}
+
+func (ie *IndexExpression) ExpressionNode() {}

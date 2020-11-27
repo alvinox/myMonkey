@@ -15,6 +15,7 @@ func main() {
     fmt.Printf("Hello %s! This is the Monkey programming language!\n",
         user.Username)
     fmt.Printf("Feel free to type in commands\n")
-    repl.Start(os.Stdin, os.Stdout)
+    // repl.Evaluate(os.Stdin, os.Stdout)
+    repl.VM(os.Stdin, os.Stdout)
 }
 

@@ -12,8 +12,21 @@ type Opcode byte
 
 const (
     _ Opcode = iota
-    OpConstant
-    OpAdd
+    OpConstant       // Constant
+    OpPop            // pop the topmost element off the stack
+    OpAdd            // Infix +   operator
+    OpSub            // Infix -   operator
+    OpMul            // Infix *   operator
+    OpDiv            // Infix /   operator
+    OpEqual          // Infix ==  operator
+    OpNotEqual       // Infix !=  operator
+    OpLessThan       // Infix <   operator
+    OpGreaterThan    // Infix >   operator
+    OpMinus          // Prefix -  operator
+    OpBang           // Prefix !  operator
+    OpTrue           // true
+    OpFalse          // false
+
 )
 
 const (
@@ -32,8 +45,20 @@ type Definition struct {
 }
 
 var definitions = map[Opcode]*Definition {
-    OpConstant: {"OpConstant", []int{2}},
-    OpAdd:      {"OpAdd",      []int{}},
+    OpConstant:     {"OpConstant",     []int{2}},
+    OpPop:          {"OpPop",          []int{}},
+    OpAdd:          {"OpAdd",          []int{}},
+    OpSub:          {"OpSub",          []int{}},
+    OpMul:          {"OpMul",          []int{}},
+    OpDiv:          {"OpDiv",          []int{}},
+    OpEqual:        {"OpEqual",        []int{}},
+    OpNotEqual:     {"OpNotEqual",     []int{}},
+    OpLessThan:     {"OpLessThan",     []int{}},
+    OpGreaterThan:  {"OpGreaterThan",  []int{}},
+    OpMinus:        {"OpMinus",        []int{}},
+    OpBang:         {"OpBang",         []int{}},
+    OpTrue:         {"OpTrue",         []int{}},
+    OpFalse:        {"OpFalse",        []int{}},
 }
 
 func (ins Instructions) String() string {

@@ -26,7 +26,9 @@ const (
     OpBang           // Prefix !  operator
     OpTrue           // true
     OpFalse          // false
-
+    OpNull           // null
+    OpJumpNotTruthy
+    OpJump
 )
 
 const (
@@ -45,20 +47,23 @@ type Definition struct {
 }
 
 var definitions = map[Opcode]*Definition {
-    OpConstant:     {"OpConstant",     []int{2}},
-    OpPop:          {"OpPop",          []int{}},
-    OpAdd:          {"OpAdd",          []int{}},
-    OpSub:          {"OpSub",          []int{}},
-    OpMul:          {"OpMul",          []int{}},
-    OpDiv:          {"OpDiv",          []int{}},
-    OpEqual:        {"OpEqual",        []int{}},
-    OpNotEqual:     {"OpNotEqual",     []int{}},
-    OpLessThan:     {"OpLessThan",     []int{}},
-    OpGreaterThan:  {"OpGreaterThan",  []int{}},
-    OpMinus:        {"OpMinus",        []int{}},
-    OpBang:         {"OpBang",         []int{}},
-    OpTrue:         {"OpTrue",         []int{}},
-    OpFalse:        {"OpFalse",        []int{}},
+    OpConstant:      {"OpConstant",      []int{2}},
+    OpPop:           {"OpPop",           []int{}},
+    OpAdd:           {"OpAdd",           []int{}},
+    OpSub:           {"OpSub",           []int{}},
+    OpMul:           {"OpMul",           []int{}},
+    OpDiv:           {"OpDiv",           []int{}},
+    OpEqual:         {"OpEqual",         []int{}},
+    OpNotEqual:      {"OpNotEqual",      []int{}},
+    OpLessThan:      {"OpLessThan",      []int{}},
+    OpGreaterThan:   {"OpGreaterThan",   []int{}},
+    OpMinus:         {"OpMinus",         []int{}},
+    OpBang:          {"OpBang",          []int{}},
+    OpTrue:          {"OpTrue",          []int{}},
+    OpFalse:         {"OpFalse",         []int{}},
+    OpNull:          {"OpNull",          []int{}},
+    OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
+    OpJump:          {"OpJump",          []int{2}},
 }
 
 func (ins Instructions) String() string {

@@ -47,6 +47,10 @@ func Evaluate(in io.Reader, out io.Writer) {
 func VM(in io.Reader, out io.Writer) {
     scanner := bufio.NewScanner(in)
 
+    constants := []object.Object{}
+    globals := make([]object.Object, vm.GlobalsSize)
+    symbolTable := compiler.NewSymbolTable()
+
     for {
         fmt.Printf(PROMPT)
         scanned := scanner.Scan()
@@ -65,14 +69,17 @@ func VM(in io.Reader, out io.Writer) {
             continue
         }
 
-        compiler := compiler.New()
+        compiler := compiler.NewWithState(symbolTable, constants)
         err := compiler.Compile(program)
         if err != nil {
             fmt.Fprintf(out, "Woops! Compilation failed:\n %s\n", err)
             continue
         }
 
-        machine := vm.New(compiler.Bytecode())
+        code := compiler.Bytecode()
+        constants = code.Constants
+
+        machine := vm.NewWithGlobalsStore(code, globals)
         err = machine.Run()
         if err != nil {
             fmt.Fprintf(out, "Woops! Executing bytecode failed:\n %s\n", err)

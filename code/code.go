@@ -29,6 +29,8 @@ const (
     OpNull           // null
     OpJumpNotTruthy
     OpJump
+    OpGetGlobal
+    OpSetGlobal
 )
 
 const (
@@ -64,6 +66,8 @@ var definitions = map[Opcode]*Definition {
     OpNull:          {"OpNull",          []int{}},
     OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
     OpJump:          {"OpJump",          []int{2}},
+    OpGetGlobal:     {"OpGetGlobal",     []int{2}},
+    OpSetGlobal:     {"OpSetGlobal",     []int{2}},
 }
 
 func (ins Instructions) String() string {

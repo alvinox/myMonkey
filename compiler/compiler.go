@@ -2,6 +2,7 @@ package compiler
 
 import (
     "fmt"
+    "sort"
     "myMonkey/ast"
     "myMonkey/code"
     "myMonkey/object"
@@ -135,6 +136,10 @@ func (c *Compiler) Compile(node ast.Node) error {
         integer := &object.Integer{Value: node.Value}
         c.emit(code.OpConstant, c.addConstant(integer))
 
+    case *ast.StringLiteral:
+        str := &object.String{Value: node.Value}
+        c.emit(code.OpConstant, c.addConstant(str))
+
     case *ast.Boolean:
         if node.Value {
             c.emit(code.OpTrue)
@@ -179,6 +184,54 @@ func (c *Compiler) Compile(node ast.Node) error {
 
         afterAlternativePos := len(c.instructions)
         c.changeOperand(jumpPos, afterAlternativePos)
+
+    case *ast.ArrayLiteral:
+        for _, e := range node.Elements {
+            err := c.Compile(e)
+            if err != nil {
+                return err
+            }
+        }
+
+        c.emit(code.OpArray, len(node.Elements))
+
+    case *ast.HashLiteral:
+        keys := []ast.Expression{}
+        for k := range node.Pairs {
+            keys = append(keys, k)
+        }
+
+        sort.Slice(keys, func(i, j int) bool {
+            return keys[i].String() < keys[j].String()
+        })
+
+        for _, k := range keys {
+            err := c.Compile(k)
+            if err != nil {
+                return err
+            }
+
+            err = c.Compile(node.Pairs[k])
+            if err != nil {
+                return err
+            }
+        }
+
+        c.emit(code.OpHash, len(node.Pairs)*2)
+
+    case *ast.IndexExpression:
+        err := c.Compile(node.Left)
+        if err != nil {
+            return err
+        }
+
+        err = c.Compile(node.Index)
+        if err != nil {
+            return err
+        }
+
+        c.emit(code.OpIndex)
+
     }
 
     return nil

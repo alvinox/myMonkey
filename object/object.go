@@ -6,6 +6,7 @@ import (
     "strings"
     "hash/fnv"
     "myMonkey/ast"
+    "myMonkey/code"
 )
 
 type ObjectType string
@@ -21,6 +22,7 @@ const (
     RETURN_VALUE_OBJ = "RETURN_VALU"
     FUNCTION_OBJ     = "FUNCTION"
     BUILTIN_OBJ      = "BUILTIN"
+    COMPILED_FN_OBJ  = "COMPILED_FN_OBJ"
 )
 
 type Object interface {
@@ -183,4 +185,15 @@ type HashKey struct {
 type HashPair struct {
     Key    Object
     Value  Object
+}
+
+type CompiledFunction struct {
+    Instructions  code.Instructions
+    NumLocals     int
+    NumParameters int
+}
+
+func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FN_OBJ }
+func (cf *CompiledFunction) Inspect() string {
+    return fmt.Sprintf("CompiledFunction[%p]", cf)
 }
